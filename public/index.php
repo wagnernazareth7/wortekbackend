@@ -7,7 +7,10 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use Dotenv\Dotenv;
 use Wortek\Store\Config\Database;
 use Wortek\Store\Controllers\AuthController;
+use Wortek\Store\Controllers\ClientController;
+use Wortek\Store\Http\Authorization;
 use Wortek\Store\Http\Response;
+use Wortek\Store\Repositories\ClientRepository;
 use Wortek\Store\Repositories\UserRepository;
 
 $root = dirname(__DIR__);
@@ -61,7 +64,12 @@ session_start();
 $pdo = Database::getConnection();
 
 $userRepository = new UserRepository($pdo);
+$clientRepository = new ClientRepository($pdo);
+
+$authorization = new Authorization($userRepository);
+
 $authController = new AuthController($userRepository);
+$clientController = new ClientController($clientRepository);
 
 /*
 |--------------------------------------------------------------------------
@@ -105,6 +113,56 @@ if ($path === '/me' && $method === 'GET') {
 
 if ($path === '/logout' && $method === 'POST') {
     $authController->logout();
+}
+
+/*
+|--------------------------------------------------------------------------
+| Clientes
+|--------------------------------------------------------------------------
+*/
+
+if ($path === '/clientes' && $method === 'GET') {
+    $authorization->requirePermission(
+        'cliente.visualizar'
+    );
+
+    $clientController->index();
+}
+
+if (
+    preg_match('#^/clientes/(\d+)$#', $path, $matches)
+    && $method === 'GET'
+) {
+    $authorization->requirePermission(
+        'cliente.visualizar'
+    );
+
+    $clientController->show(
+        (int) $matches[1]
+    );
+}
+
+if ($path === '/clientes' && $method === 'POST') {
+    $user = $authorization->requirePermission(
+        'cliente.criar'
+    );
+
+    $clientController->store(
+        (int) $user['id']
+    );
+}
+
+if (
+    preg_match('#^/clientes/(\d+)$#', $path, $matches)
+    && $method === 'PUT'
+) {
+    $authorization->requirePermission(
+        'cliente.editar'
+    );
+
+    $clientController->update(
+        (int) $matches[1]
+    );
 }
 
 Response::error(
