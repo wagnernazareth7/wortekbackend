@@ -1,0 +1,19 @@
+{
+    "name": "wortek/store",
+    "description": "Backend API for Wortek Store",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Wortek\\Store\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Wagner Tembe",
+            "email": "wagnertembe10@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.7"
+    }
+}
