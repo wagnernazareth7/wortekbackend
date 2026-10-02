@@ -1,0 +1,10 @@
+<?php
+namespace Wortek\Store\Repositories;
+use PDO; use Throwable;
+final class PurchaseRepository {
+ public function __construct(private PDO $pdo){}
+ public function all(): array{return $this->pdo->query('SELECT c.*,f.nome fornecedor_nome FROM compras c JOIN fornecedores f ON f.id=c.fornecedor_id ORDER BY c.id DESC')->fetchAll();}
+ public function find(int $id): ?array{$s=$this->pdo->prepare('SELECT c.*,f.nome fornecedor_nome FROM compras c JOIN fornecedores f ON f.id=c.fornecedor_id WHERE c.id=:id');$s->execute(['id'=>$id]);$r=$s->fetch();if(!$r)return null;$i=$this->pdo->prepare('SELECT ci.*,p.sku,p.nome produto_nome FROM compra_itens ci JOIN produtos p ON p.id=ci.produto_id WHERE ci.compra_id=:id');$i->execute(['id'=>$id]);$r['itens']=$i->fetchAll();return $r;}
+ public function create(array $d,array $items,int $uid): int{$this->pdo->beginTransaction();try{$num='CMP-'.date('Ymd-His').'-'.random_int(100,999);$sub=0;foreach($items as $it)$sub+=(float)$it['quantidade']*(float)$it['preco_unitario'];$ca=(float)($d['custos_adicionais']??0);$s=$this->pdo->prepare('INSERT INTO compras(numero,fornecedor_id,estado,subtotal,custos_adicionais,total,observacoes,created_by) VALUES(:numero,:fornecedor_id,:estado,:subtotal,:custos,:total,:obs,:uid)');$s->execute(['numero'=>$num,'fornecedor_id'=>$d['fornecedor_id'],'estado'=>$d['estado']??'rascunho','subtotal'=>$sub,'custos'=>$ca,'total'=>$sub+$ca,'obs'=>$d['observacoes']??null,'uid'=>$uid]);$id=(int)$this->pdo->lastInsertId();$si=$this->pdo->prepare('INSERT INTO compra_itens(compra_id,produto_id,quantidade,preco_unitario,total) VALUES(:c,:p,:q,:pu,:t)');foreach($items as $it){$q=(float)$it['quantidade'];$pu=(float)$it['preco_unitario'];$si->execute(['c'=>$id,'p'=>$it['produto_id'],'q'=>$q,'pu'=>$pu,'t'=>$q*$pu]);}$this->pdo->commit();return $id;}catch(Throwable $e){if($this->pdo->inTransaction())$this->pdo->rollBack();throw $e;}}
+ public function updateStatus(int $id,string $e): void{$s=$this->pdo->prepare('UPDATE compras SET estado=:e WHERE id=:id');$s->execute(['e'=>$e,'id'=>$id]);}
+}

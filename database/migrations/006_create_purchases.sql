@@ -1,0 +1,27 @@
+CREATE TABLE compras (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ numero VARCHAR(40) NOT NULL UNIQUE,
+ fornecedor_id INT UNSIGNED NOT NULL,
+ estado ENUM('rascunho','encomendada','recebida','cancelada') NOT NULL DEFAULT 'rascunho',
+ subtotal DECIMAL(15,2) NOT NULL DEFAULT 0,
+ custos_adicionais DECIMAL(15,2) NOT NULL DEFAULT 0,
+ total DECIMAL(15,2) NOT NULL DEFAULT 0,
+ observacoes TEXT NULL,
+ created_by INT UNSIGNED NULL,
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ FOREIGN KEY(fornecedor_id) REFERENCES fornecedores(id) ON DELETE RESTRICT,
+ FOREIGN KEY(created_by) REFERENCES utilizadores(id) ON DELETE SET NULL,
+ INDEX(fornecedor_id),INDEX(estado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE compra_itens (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ compra_id INT UNSIGNED NOT NULL,
+ produto_id INT UNSIGNED NOT NULL,
+ quantidade DECIMAL(15,3) NOT NULL,
+ preco_unitario DECIMAL(15,2) NOT NULL,
+ total DECIMAL(15,2) NOT NULL,
+ FOREIGN KEY(compra_id) REFERENCES compras(id) ON DELETE CASCADE,
+ FOREIGN KEY(produto_id) REFERENCES produtos(id) ON DELETE RESTRICT,
+ INDEX(compra_id),INDEX(produto_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
